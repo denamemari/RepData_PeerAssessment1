@@ -1,25 +1,103 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1.Template"
+author: "Dena Memari"
+date: "Sunday, July 19, 2015"
+output: html_document
 ---
-
-
 ## Loading and preprocessing the data
+###Active Echo and read data in R: 
 
-
-
+```{r setoption,echo = TRUE}
+setwd("C:/Users/Dena/New R")
+activity <- read.csv("activity.csv", header = T, sep = ",")
+```
 ## What is mean total number of steps taken per day?
-
-
-
+###Mean total number of steps taken per day:
+```{r}
+Sum <- tapply(activity$steps, activity$date, sum, na.rm=T)
+```
+###Histogram Total steps taken per day:
+```{r}
+hist(Sum, xlab = "sum of steps per day", main = "Histogram of Steps (per day)")
+```
+### calculate total Mean per day:
+```{r}
+Mean_Total <- round(mean(Sum))
+print(c("Mean is",Mean_Total))
+```
+### Calculate total Median per day: 
+```{r}
+Median_Total <- round(median(Sum))
+print (c("Median is", Median_Total))
+````
 ## What is the average daily activity pattern?
-
-
-
+###Histogram ( include Total Mean and Total Median):
+### The average daily activity pattern and Activity Pattern Diagram : 
+```{r}
+Activity_Pattern <- tapply( activity$steps, activity$interval, mean, na.rm=T)
+plot(Activity_Pattern ~ unique( activity$interval), type="l", xlab = "five Minutes Interval")
+```
+### maximum number of steps in 5-Mins interval:
+```{r}
+Activity_Pattern[which.max(Activity_Pattern)]
+```
 ## Imputing missing values
-
-
-
+### Calculate total missing value in whole dataset:
+```{r}
+table(is.na(activity) == TRUE)
+```
+###Strategy for filling in all of the missing values in the dataset( Create New dataSet called New_Activity):
+### subsitute NA( in activity$step) with the mean (of steps) of the corresponding interval.
+```{r}
+New_Activity<- activity  
+for (i in 1:nrow(activity)){
+  if(is.na(activity$steps[i])){
+    New_Activity$steps[i]<- Activity_Pattern[[as.character(activity[i, "interval"])]]
+      }
+   }
+```
+### Histogram for summary of New Dataset:
+```{r}
+SumNew <- tapply(New_Activity$steps, New_Activity$date, sum, na.rm=T)
+hist(SumNew, xlab = "Sum of steps(per day)", main = "Histogram of steps (per day)")
+```
+### New Median and Mean: 
+```{r}
+New_Mean<- round(mean(SumNew))
+New_Median <- round(median(SumNew))
+print(c("The New Mean is", New_Mean))
+print(c("This New Median is", New_Median))
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+###different activity patterns between weekdays and weekends:
+```{r}
+New_Activity$weekday <- c("weekday")
+New_Activity[weekdays(as.Date(New_Activity[, 2])) %in% c("Saturday", "Sunday", "samedi", "dimanche", "saturday", "sunday", "Samedi", "Dimanche"), ][4] <- c("weekend")
+table(New_Activity$weekday == "weekend")
+```
+### Mean of activity for both weekdays and weekends:
+```{r}
+New_Activity$weekday <- factor(New_Activity$weekday)
+New_Activity_weekend <- subset(New_Activity, New_Activity$weekday == "weekend")
+New_Activity_weekday <- subset(New_Activity, New_Activity$weekday == "weekday")
+Mean_New_Activity_weekday <- tapply(New_Activity_weekday$steps, New_Activity_weekday$interval, mean)
+Mean_New_Activity_weekend <- tapply(New_Activity_weekend$steps, New_Activity_weekend$interval, mean)
+```
+### A comparison between weekdays and weekends in New dataset:
+```{r}
+library(lattice)
+df_weekday <- NULL
+df_weekend <- NULL
+df_final <- NULL
+Weekday <- data.frame(interval = unique(New_Activity_weekday$interval), AVG = as.numeric(Mean_New_Activity_weekday ), day = rep("weekday", length(Mean_New_Activity_weekday)))
+Weekend <- data.frame(interval = unique(New_Activity_weekend$interval), AVG = as.numeric(Mean_New_Activity_weekday ), day = rep("weekend", length(Mean_New_Activity_weekend)))
+Final <- rbind(Weekday, Weekend)
+
+xyplot( AVG ~ interval | day, data = Final, layout = c(1, 2), 
+        type = "l", ylab = "Number of STEPS")
+```
+
+### we can observe :
+1. density of activity in weekends are higher than weekdays 
+2. number of steps that are taken in weekends are lower than weekdays in general.
+  
